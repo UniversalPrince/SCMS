@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SCMS — Submit Complaint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0a0a0f; --surface:#13131a; --surface2:#0f0f18; --border:#1e1e2e;
+      --accent:#e8ff47; --accent2:#7c6aff;
+      --text:#f0f0f5; --muted:#6b6b80;
+      --error:#ff5f5f; --success:#4ade80;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    .sidebar { position:fixed; top:0; left:0; width:240px; height:100vh; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:28px 20px; z-index:100; }
+    .logo { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-.5px; margin-bottom:4px; padding-left:8px; }
+    .logo span { color:var(--accent); }
+    .logo-sub { font-size:10px; color:var(--muted); padding-left:8px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:28px; }
+    .nav-section { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); padding:0 8px; margin-bottom:8px; margin-top:20px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--muted); font-size:14px; font-weight:500; cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+    .nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+    .nav-item.active { background:rgba(232,255,71,.08); color:var(--accent); pointer-events:none; cursor:default; }
+    .nav-item.active:hover { background:rgba(232,255,71,.08); color:var(--accent); }
+    .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+    .sidebar-footer { margin-top:auto; padding-top:20px; border-top:1px solid var(--border); }
+    .user-chip { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+    .avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent2),var(--accent)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:#0a0a0f; flex-shrink:0; }
+    .user-info .name { font-size:13px; font-weight:500; }
+    .user-info .role { font-size:11px; color:var(--muted); }
+    .logout-btn { width:100%; margin-top:8px; padding:9px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; transition:all .2s; }
+    .logout-btn:hover { border-color:var(--error); color:var(--error); }
+
+    .main { margin-left:240px; padding:36px 40px; min-height:100vh; }
+    .page-header { margin-bottom:32px; }
+    .page-header h1 { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; letter-spacing:-.5px; }
+    .page-header p { color:var(--muted); font-size:14px; margin-top:4px; }
+
+    .form-grid { display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start; }
+
+    .form-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px; }
+    .form-card h2 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-group { margin-bottom:20px; }
+    .form-group:last-child { margin-bottom:0; }
+    label { display:block; font-size:11px; font-weight:500; color:var(--muted); letter-spacing:.8px; text-transform:uppercase; margin-bottom:8px; }
+    input, select, textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; outline:none; transition:border-color .2s, box-shadow .2s; }
+    input:focus, select:focus, textarea:focus { border-color:var(--accent2); box-shadow:0 0 0 3px rgba(124,106,255,.1); }
+    input::placeholder, textarea::placeholder { color:var(--muted); }
+    select option { background:#13131a; }
+    textarea { resize:vertical; min-height:120px; line-height:1.6; }
+    .char-count { font-size:11px; color:var(--muted); text-align:right; margin-top:4px; }
+
+    .priority-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .priority-opt { padding:10px 8px; border:1px solid var(--border); border-radius:10px; text-align:center; cursor:pointer; transition:all .2s; font-size:13px; font-weight:500; color:var(--muted); }
+    .priority-opt:hover { border-color:var(--muted); color:var(--text); }
+    .priority-opt.selected.low    { border-color:var(--success); color:var(--success); background:rgba(74,222,128,.08); }
+    .priority-opt.selected.medium { border-color:#fbbf24; color:#fbbf24; background:rgba(251,191,36,.08); }
+    .priority-opt.selected.high   { border-color:var(--error); color:var(--error); background:rgba(255,95,95,.08); }
+
+    .drop-zone { border:2px dashed var(--border); border-radius:12px; padding:28px; text-align:center; cursor:pointer; transition:all .2s; position:relative; }
+    .drop-zone:hover,.drop-zone.dragover { border-color:var(--accent2); background:rgba(124,106,255,.04); }
+    .drop-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .drop-zone .dz-icon { font-size:28px; margin-bottom:8px; }
+    .drop-zone .dz-text { font-size:13px; color:var(--muted); }
+    .drop-zone .dz-text span { color:var(--accent2); }
+    .file-list { margin-top:12px; display:flex; flex-direction:column; gap:6px; }
+    .file-item { display:flex; justify-content:space-between; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:12px; }
+    .file-item .remove { cursor:pointer; color:var(--muted); font-size:14px; }
+    .file-item .remove:hover { color:var(--error); }
+
+    .submit-btn { width:100%; padding:14px; background:var(--accent); color:#0a0a0f; border:none; border-radius:10px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:all .2s; margin-top:24px; }
+    .submit-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(232,255,71,.2); }
+    .submit-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    /* Preview */
+    .preview-section { position:sticky; top:36px; }
+    .preview-section h2 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; }
+    .preview-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; }
+    .pc-badge-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .pc-id { font-family:'Syne',sans-serif; font-size:12px; color:var(--accent2); }
+    .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; padding:4px 10px; border-radius:100px; text-transform:uppercase; letter-spacing:.5px; }
+    .badge.Pending { background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.25); }
+    .pc-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; word-break:break-word; }
+    .pc-meta  { font-size:12px; color:var(--muted); margin-bottom:16px; }
+    .pc-desc  { font-size:13px; color:var(--muted); line-height:1.6; word-break:break-word; border-top:1px solid var(--border); padding-top:16px; }
+    .info-row { display:flex; justify-content:space-between; margin-bottom:8px; }
+    .info-row .key { font-size:12px; color:var(--muted); }
+    .info-row .val { font-size:12px; font-weight:500; }
+    .priority-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; }
+    .priority-badge.low    { background:rgba(74,222,128,.15); color:var(--success); }
+    .priority-badge.medium { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .priority-badge.high   { background:rgba(255,95,95,.15);  color:var(--error); }
+    .sla-info { background:rgba(124,106,255,.08); border:1px solid rgba(124,106,255,.2); border-radius:10px; padding:12px 16px; font-size:12px; color:#a78bfa; margin-top:16px; line-height:1.5; }
+
+    .field-error { color:var(--error); font-size:11px; margin-top:5px; display:none; }
+    .field-error.show { display:block; }
+
+    /* Success overlay */
+    .success-overlay { display:none; position:fixed; inset:0; background:rgba(10,10,15,.85); backdrop-filter:blur(6px); z-index:999; align-items:center; justify-content:center; }
+    .success-overlay.show { display:flex; }
+    .success-box { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:48px 40px; text-align:center; max-width:400px; animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes popIn { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+    .success-box .check { font-size:52px; margin-bottom:16px; }
+    .success-box h3 { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; margin-bottom:8px; }
+    .success-box p { color:var(--muted); font-size:14px; }
+    .success-box .cmp-id { font-family:'Syne',sans-serif; font-size:20px; color:var(--accent); margin:12px 0 24px; }
+    .go-btn { display:inline-block; background:var(--accent); color:#0a0a0f; border:none; border-radius:10px; padding:12px 28px; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; cursor:pointer; text-decoration:none; transition:all .2s; }
+    .go-btn:hover { transform:translateY(-1px); }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="logo">SC<span>MS</span></div>
+    <div class="logo-sub">User Panel</div>
+    <div class="nav-section">Main</div>
+    <a class="nav-item" href="user-dashboard.html"><span class="icon">⬛</span> Dashboard</a>
+    <!-- New Complaint = current page, so active + no pointer -->
+    <a class="nav-item active" href="submit-complaint.html"><span class="icon">✚</span> New Complaint</a>
+    <div class="nav-section">Account</div>
+    <a class="nav-item" href="#"><span class="icon">👤</span> My Profile</a>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <div class="name" id="sb-name">—</div>
+          <div class="role" id="sb-role">user</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Submit a Complaint</h1>
+      <p>Fill in the details below. Your complaint will be tracked from submission to resolution.</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-card">
+        <h2>Complaint Details</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="category" onchange="updatePreview()">
+              <option value="">Select category…</option>
+              <option>Infrastructure</option>
+              <option>Facilities</option>
+              <option>Services</option>
+              <option>Academic</option>
+              <option>IT / Technical</option>
+              <option>Administration</option>
+              <option>Other</option>
+            </select>
+            <div class="field-error" id="err-cat">Please select a category.</div>
+          </div>
+          <div class="form-group">
+            <label>Location / Area</label>
+            <input type="text" id="location" placeholder="e.g. Block C, Lab 302" oninput="updatePreview()"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Complaint Title *</label>
+          <input type="text" id="title" placeholder="Brief, descriptive title…" maxlength="80" oninput="updatePreview()"/>
+          <div class="field-error" id="err-title">Title is required.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Description *</label>
+          <textarea id="description" placeholder="Describe the issue in detail — when it started, how it affects you, what you've tried…" maxlength="500" oninput="updatePreview(); updateChar()"></textarea>
+          <div class="char-count"><span id="char">0</span> / 500</div>
+          <div class="field-error" id="err-desc">Please describe the issue.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Priority *</label>
+          <div class="priority-grid">
+            <div class="priority-opt low"    onclick="selectPriority('low',this)">🟢 Low</div>
+            <div class="priority-opt medium" onclick="selectPriority('medium',this)">🟡 Medium</div>
+            <div class="priority-opt high"   onclick="selectPriority('high',this)">🔴 High</div>
+          </div>
+          <div class="field-error" id="err-priority">Please select a priority.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Attachment (optional)</label>
+          <div class="drop-zone" id="dz">
+            <input type="file" id="file-input" multiple accept="image/*,.pdf" onchange="handleFiles(this.files)"/>
+            <div class="dz-icon">📎</div>
+            <div class="dz-text">Drop files here or <span>browse</span></div>
+            <div class="dz-text" style="font-size:11px;margin-top:4px">Images, PDF — max 5MB each</div>
+          </div>
+          <div class="file-list" id="file-list"></div>
+        </div>
+
+        <button class="submit-btn" id="submit-btn" onclick="submitComplaint()">Submit Complaint →</button>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="preview-section">
+        <h2>Live Preview</h2>
+        <div class="preview-card">
+          <div class="pc-badge-row">
+            <span class="pc-id" id="prev-id">CMP-——</span>
+            <span class="badge Pending">Pending</span>
+          </div>
+          <div class="pc-title" id="prev-title" style="color:var(--muted)">Your title will appear here…</div>
+          <div class="pc-meta"  id="prev-meta">Category · Location</div>
+          <div style="margin:16px 0">
+            <div class="info-row"><span class="key">Filed By</span><span class="val" id="prev-user">—</span></div>
+            <div class="info-row"><span class="key">Date</span><span class="val" id="prev-date">—</span></div>
+            <div class="info-row"><span class="key">Priority</span><span class="val" id="prev-priority">—</span></div>
+          </div>
+          <div class="pc-desc" id="prev-desc" style="font-style:italic">Your description will appear here…</div>
+          <div class="sla-info">⏱ SLA: This complaint will be resolved within <strong>72 hours</strong>. Escalation triggers at 48h if unresolved.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Success overlay -->
+  <div class="success-overlay" id="success-overlay">
+    <div class="success-box">
+      <div class="check">✅</div>
+      <h3>Complaint Filed!</h3>
+      <p>Your complaint has been submitted with ID:</p>
+      <div class="cmp-id" id="success-id">CMP-——</div>
+      <p style="font-size:12px">Track its status from your dashboard.</p><br/>
+      <a href="user-dashboard.html?new=1" class="go-btn">Go to Dashboard →</a>
+    </div>
+  </div>
+
+  <script>
+    const session = JSON.parse(localStorage.getItem('scms_session') || 'null');
+    if (!session) window.location.href = 'index.html';
+    if (session && session.role === 'admin') window.location.href = 'admin-dashboard.html';
+
+    document.getElementById('sb-name').textContent   = session.name;
+    document.getElementById('sb-role').textContent   = session.role;
+    document.getElementById('sb-avatar').textContent = session.name.charAt(0).toUpperCase();
+    document.getElementById('prev-user').textContent = session.name;
+    document.getElementById('prev-date').textContent = new Date().toISOString().split('T')[0];
+    document.getElementById('prev-id').textContent   = 'CMP-' + Date.now().toString().slice(-6);
+
+    let selPriority = '';
+    function selectPriority(p, el){
+      selPriority = p;
+      document.querySelectorAll('.priority-opt').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('err-priority').classList.remove('show');
+      updatePreview();
+    }
+
+    function updateChar(){
+      document.getElementById('char').textContent = document.getElementById('description').value.length;
+    }
+
+    function updatePreview(){
+      const title = document.getElementById('title').value.trim();
+      const cat   = document.getElementById('category').value;
+      const loc   = document.getElementById('location').value.trim();
+      const desc  = document.getElementById('description').value.trim();
+
+      const t = document.getElementById('prev-title');
+      t.textContent  = title || 'Your title will appear here…';
+      t.style.color  = title ? 'var(--text)' : 'var(--muted)';
+
+      document.getElementById('prev-meta').textContent = [cat, loc].filter(Boolean).join(' · ') || 'Category · Location';
+
+      const d = document.getElementById('prev-desc');
+      d.textContent  = desc || 'Your description will appear here…';
+      d.style.fontStyle = desc ? 'normal' : 'italic';
+      d.style.color  = desc ? 'var(--text)' : 'var(--muted)';
+
+      if (selPriority) {
+        const labels = { low:'Low', medium:'Medium', high:'High' };
+        document.getElementById('prev-priority').innerHTML = `<span class="priority-badge ${selPriority}">${labels[selPriority]}</span>`;
+      }
+    }
+
+    let attachedFiles = [];
+    function handleFiles(files){
+      for (const f of files){
+        if (f.size > 5*1024*1024){ alert(`${f.name} exceeds 5MB.`); continue; }
+        if (!attachedFiles.includes(f.name)) attachedFiles.push(f.name);
+      }
+      renderFiles();
+    }
+    function renderFiles(){
+      document.getElementById('file-list').innerHTML = attachedFiles.map((n,i) =>
+        `<div class="file-item"><span>📄 ${n}</span><span class="remove" onclick="removeFile(${i})">✕</span></div>`
+      ).join('');
+    }
+    function removeFile(i){ attachedFiles.splice(i,1); renderFiles(); }
+
+    const dz = document.getElementById('dz');
+    dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave',()=> dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+    function validate(){
+      const checks = [
+        [document.getElementById('title').value.trim(),       'err-title'],
+        [document.getElementById('category').value,           'err-cat'],
+        [document.getElementById('description').value.trim(), 'err-desc'],
+      ];
+      let ok = true;
+      checks.forEach(([val, id])=>{ const s=!val; document.getElementById(id).classList.toggle('show',s); if(s) ok=false; });
+      if (!selPriority){ document.getElementById('err-priority').classList.add('show'); ok=false; }
+      return ok;
+    }
+
+    function submitComplaint(){
+      if (!validate()) return;
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true; btn.textContent = 'Submitting…';
+      const id = 'CMP-' + Date.now();
+      const c = {
+        id, userId:session.id, userName:session.name,
+        title:       document.getElementById('title').value.trim(),
+        category:    document.getElementById('category').value,
+        location:    document.getElementById('location').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        priority:    selPriority,
+        attachments: attachedFiles,
+        status:      'Pending',
+        submittedAt: new Date().toISOString().split('T')[0],
+        updatedAt:   new Date().toISOString().split('T')[0],
+      };
+      const all = JSON.parse(localStorage.getItem('scms_complaints') || '[]');
+      all.push(c);
+      localStorage.setItem('scms_complaints', JSON.stringify(all));
+      document.getElementById('success-id').textContent = id;
+      document.getElementById('success-overlay').classList.add('show');
+    }
+
+    function logout(){ localStorage.removeItem('scms_session'); window.location.href='index.html'; }
+  </script>
+</body>
+</html>

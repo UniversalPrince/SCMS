@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SCMS — My Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0a0a0f; --surface:#13131a; --surface2:#0f0f18; --border:#1e1e2e;
+      --accent:#e8ff47; --accent2:#7c6aff;
+      --text:#f0f0f5; --muted:#6b6b80;
+      --error:#ff5f5f; --success:#4ade80; --warn:#fbbf24;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { position:fixed; top:0; left:0; width:240px; height:100vh; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:28px 20px; z-index:100; }
+    .logo { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-.5px; margin-bottom:4px; padding-left:8px; }
+    .logo span { color:var(--accent); }
+    .logo-sub { font-size:10px; color:var(--muted); padding-left:8px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:28px; }
+    .nav-section { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); padding:0 8px; margin-bottom:8px; margin-top:20px; }
+
+    /* Nav item — default clickable */
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--muted); font-size:14px; font-weight:500; cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+    .nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+
+    /* Active = current page: no pointer, no hover, accent highlight */
+    .nav-item.active { background:rgba(232,255,71,.08); color:var(--accent); pointer-events:none; cursor:default; }
+    .nav-item.active:hover { background:rgba(232,255,71,.08); color:var(--accent); }
+
+    .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+    .sidebar-footer { margin-top:auto; padding-top:20px; border-top:1px solid var(--border); }
+    .user-chip { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+    .avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent2),var(--accent)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:#0a0a0f; flex-shrink:0; }
+    .user-info .name { font-size:13px; font-weight:500; }
+    .user-info .role { font-size:11px; color:var(--muted); text-transform:capitalize; }
+    .logout-btn { width:100%; margin-top:8px; padding:9px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; transition:all .2s; }
+    .logout-btn:hover { border-color:var(--error); color:var(--error); }
+
+    /* ── Main ── */
+    .main { margin-left:240px; padding:36px 40px; min-height:100vh; }
+    .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; }
+    .page-header h1 { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; letter-spacing:-.5px; }
+    .page-header p { color:var(--muted); font-size:14px; margin-top:4px; }
+    .new-btn { background:var(--accent); color:#0a0a0f; border:none; border-radius:10px; padding:11px 20px; font-family:'Syne',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:all .2s; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .new-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.2); }
+
+    /* Stats */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; transition:border-color .2s; animation:fadeUp .4s ease both; }
+    .stat-card:nth-child(1){animation-delay:.05s} .stat-card:nth-child(2){animation-delay:.10s}
+    .stat-card:nth-child(3){animation-delay:.15s} .stat-card:nth-child(4){animation-delay:.20s}
+    .stat-card:hover { border-color:var(--accent2); }
+    .stat-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:10px; }
+    .stat-value { font-family:'Syne',sans-serif; font-size:36px; font-weight:700; }
+    .stat-value.pending  { color:var(--warn); }
+    .stat-value.progress { color:var(--accent2); }
+    .stat-value.resolved { color:var(--success); }
+    .stat-value.total    { color:var(--text); }
+
+    /* Table */
+    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .section-header h2 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
+    .search-bar { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 14px; }
+    .search-bar input { background:none; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; width:200px; }
+    .search-bar input::placeholder { color:var(--muted); }
+    .filter-row { display:flex; gap:8px; margin-bottom:16px; }
+    .filter-btn { padding:6px 14px; border-radius:100px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer; transition:all .2s; }
+    .filter-btn.active, .filter-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(232,255,71,.06); }
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { padding:14px 20px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); text-align:left; background:var(--surface2); border-bottom:1px solid var(--border); }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:rgba(255,255,255,.02); }
+    td { padding:16px 20px; font-size:14px; vertical-align:middle; }
+    .complaint-id { font-family:'Syne',sans-serif; font-size:12px; color:var(--accent2); }
+    .complaint-title { font-weight:500; }
+    .complaint-cat { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; padding:4px 10px; border-radius:100px; text-transform:uppercase; letter-spacing:.5px; }
+    .badge::before { content:''; width:5px; height:5px; border-radius:50%; }
+    .badge.Pending    { background:rgba(251,191,36,.12); color:var(--warn);    border:1px solid rgba(251,191,36,.25); }
+    .badge.Pending::before { background:var(--warn); }
+    .badge.In\ Progress { background:rgba(124,106,255,.12); color:#a78bfa; border:1px solid rgba(124,106,255,.25); }
+    .badge.In\ Progress::before { background:#a78bfa; }
+    .badge.Resolved   { background:rgba(74,222,128,.12); color:var(--success); border:1px solid rgba(74,222,128,.25); }
+    .badge.Resolved::before { background:var(--success); }
+
+    .date-cell { color:var(--muted); font-size:13px; }
+
+    /* SLA */
+    .sla { display:flex; flex-direction:column; gap:4px; }
+    .sla-bar { height:4px; background:var(--border); border-radius:10px; overflow:hidden; width:80px; }
+    .sla-fill { height:100%; border-radius:10px; }
+    .sla-fill.ok   { background:var(--success); }
+    .sla-fill.warn { background:var(--warn); }
+    .sla-fill.over { background:var(--error); }
+    .sla-text { font-size:11px; color:var(--muted); }
+
+    /* Empty */
+    .empty-state { padding:60px 20px; text-align:center; }
+    .empty-state .emoji { font-size:40px; margin-bottom:12px; }
+    .empty-state p { color:var(--muted); font-size:14px; }
+    .empty-state a { color:var(--accent); text-decoration:none; }
+
+    /* Toast */
+    #toast { position:fixed; top:24px; right:24px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; z-index:9999; transform:translateY(-80px); opacity:0; transition:all .3s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; gap:10px; min-width:240px; }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.success { border-color:var(--success); }
+    #toast.error   { border-color:var(--error); }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="logo">SC<span>MS</span></div>
+    <div class="logo-sub">User Panel</div>
+    <div class="nav-section">Main</div>
+    <!-- active = current page, pointer-events:none applied via CSS -->
+    <a class="nav-item active" href="user-dashboard.html"><span class="icon">⬛</span> Dashboard</a>
+    <a class="nav-item" href="submit-complaint.html"><span class="icon">✚</span> New Complaint</a>
+    <div class="nav-section">Account</div>
+    <a class="nav-item" href="#"><span class="icon">👤</span> My Profile</a>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <div class="name" id="sb-name">—</div>
+          <div class="role" id="sb-role">user</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>My Dashboard</h1>
+        <p id="greeting">Loading…</p>
+      </div>
+      <a href="submit-complaint.html" class="new-btn">＋ New Complaint</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Filed</div><div class="stat-value total" id="s-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value pending" id="s-pending">0</div></div>
+      <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value progress" id="s-progress">0</div></div>
+      <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value resolved" id="s-resolved">0</div></div>
+    </div>
+
+    <div class="section-header">
+      <h2>My Complaints</h2>
+      <div class="search-bar">
+        <span style="color:var(--muted)">🔍</span>
+        <input type="text" id="search" placeholder="Search by title, ID, category…" oninput="renderTable()"/>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('All',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('Pending',this)">Pending</button>
+      <button class="filter-btn" onclick="setFilter('In Progress',this)">In Progress</button>
+      <button class="filter-btn" onclick="setFilter('Resolved',this)">Resolved</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Complaint</th><th>Priority</th><th>Status</th><th>SLA</th><th>Filed On</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty-state" style="display:none">
+        <div class="emoji">📭</div>
+        <p>No complaints here. <a href="submit-complaint.html">File one now →</a></p>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"><span id="t-icon">✓</span> <span id="t-msg"></span></div>
+
+  <script>
+    // ── Auth guard ──
+    const session = JSON.parse(localStorage.getItem('scms_session') || 'null');
+    if (!session) { window.location.href = 'index.html'; }
+    if (session && session.role === 'admin') { window.location.href = 'admin-dashboard.html'; }
+
+    // Sidebar
+    document.getElementById('sb-name').textContent   = session.name;
+    document.getElementById('sb-role').textContent   = session.role;
+    document.getElementById('sb-avatar').textContent = session.name.charAt(0).toUpperCase();
+
+    // Greeting
+    const hr = new Date().getHours();
+    const g  = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = `${g}, ${session.name.split(' ')[0]} — here's your overview`;
+
+    // Seed demo complaints if first time
+    function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().split('T')[0]; }
+    (function seedDemo(){
+      const all  = JSON.parse(localStorage.getItem('scms_complaints') || '[]');
+      const mine = all.filter(c => c.userId === session.id);
+      if (mine.length > 0) return;
+      [
+        {id:'CMP-1001',userId:session.id,userName:session.name,title:'Wi-Fi Not Working in Block C',  category:'Infrastructure',location:'Block C',  description:'Internet down for 2 days.',         priority:'high',  status:'Pending',    submittedAt:daysAgo(1),updatedAt:daysAgo(1)},
+        {id:'CMP-1002',userId:session.id,userName:session.name,title:'Lab AC Malfunction',             category:'Facilities',    location:'Lab 302', description:'AC not cooling since Monday.',      priority:'medium',status:'In Progress',submittedAt:daysAgo(3),updatedAt:daysAgo(1)},
+        {id:'CMP-1003',userId:session.id,userName:session.name,title:'Cafeteria Queue System Bug',    category:'Services',      location:'Canteen', description:'Token system completely broken.',   priority:'low',   status:'Resolved',   submittedAt:daysAgo(7),updatedAt:daysAgo(2)},
+      ].forEach(d => all.push(d));
+      localStorage.setItem('scms_complaints', JSON.stringify(all));
+    })();
+
+    let activeFilter = 'All';
+    function setFilter(f, btn){
+      activeFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function getSLA(c){
+      if (c.status === 'Resolved') return { pct:100, cls:'ok', text:'Resolved' };
+      const elapsed = (new Date() - new Date(c.submittedAt)) / 3600000;
+      const pct     = Math.min(100, Math.round((elapsed / 72) * 100));
+      const rem     = Math.max(0, 72 - elapsed);
+      return { pct, cls: pct < 50 ? 'ok' : pct < 80 ? 'warn' : 'over', text: pct >= 100 ? 'Overdue' : `${Math.round(rem)}h left` };
+    }
+
+    const PRIORITY_LABEL = { high:'🔴 High', medium:'🟡 Medium', low:'🟢 Low', '':'—' };
+
+    function renderTable(){
+      const all      = JSON.parse(localStorage.getItem('scms_complaints') || '[]');
+      const mine     = all.filter(c => c.userId === session.id);
+      const query    = document.getElementById('search').value.toLowerCase();
+
+      // Stats
+      document.getElementById('s-total').textContent    = mine.length;
+      document.getElementById('s-pending').textContent  = mine.filter(c=>c.status==='Pending').length;
+      document.getElementById('s-progress').textContent = mine.filter(c=>c.status==='In Progress').length;
+      document.getElementById('s-resolved').textContent = mine.filter(c=>c.status==='Resolved').length;
+
+      let list = mine;
+      if (activeFilter !== 'All') list = list.filter(c => c.status === activeFilter);
+      if (query) list = list.filter(c =>
+        c.title.toLowerCase().includes(query) ||
+        c.category.toLowerCase().includes(query) ||
+        c.id.toLowerCase().includes(query)
+      );
+
+      const tbody = document.getElementById('tbody');
+      const empty = document.getElementById('empty');
+      if (!list.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = [...list].reverse().map(c => {
+        const sla = getSLA(c);
+        return `<tr>
+          <td><span class="complaint-id">${c.id}</span></td>
+          <td><div class="complaint-title">${c.title}</div><div class="complaint-cat">${c.category}${c.location?' · '+c.location:''}</div></td>
+          <td>${PRIORITY_LABEL[c.priority||'']}</td>
+          <td><span class="badge ${c.status}">${c.status}</span></td>
+          <td><div class="sla"><div class="sla-bar"><div class="sla-fill ${sla.cls}" style="width:${sla.pct}%"></div></div><span class="sla-text">${sla.text}</span></div></td>
+          <td class="date-cell">${c.submittedAt}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    renderTable();
+
+    function logout(){ localStorage.removeItem('scms_session'); window.location.href='index.html'; }
+
+    // Toast for after complaint submit
+    if (new URLSearchParams(window.location.search).get('new') === '1'){
+      const el=document.getElementById('toast');
+      document.getElementById('t-icon').textContent='✓';
+      document.getElementById('t-msg').textContent='Complaint submitted successfully!';
+      el.className='show success';
+      setTimeout(()=>el.className='',3500);
+      history.replaceState({},'',location.pathname); // clean ?new=1 from URL
+    }
+  </script>
+</body>
+</html>
